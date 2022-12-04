@@ -8,6 +8,10 @@
           <mappings>
             <mapping deploy="/CV/LLIE-SCI" local="$PROJECT_DIR$" web="/" />
           </mappings>
+          <excludedPaths>
+            <excludedPath path="/CV/LLIE-SCI/results" />
+            <excludedPath path="/CV/LLIE-SCI/data" />
+          </excludedPaths>
         </serverdata>
       </paths>
       <paths name="Speech-MZY">

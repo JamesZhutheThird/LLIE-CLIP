@@ -25,7 +25,12 @@ parser.add_argument('--seed', type=int, default=2, help='random seed')
 parser.add_argument('--epochs', type=int, default=1000, help='epochs')
 parser.add_argument('--lr', type=float, default=0.0003, help='learning rate')
 parser.add_argument('--stage', type=int, default=3, help='epochs')
-parser.add_argument('--save', type=str, default='EXP/', help='location of the data corpus')
+parser.add_argument('--train_dir', type=str, default='./data/medium',
+                    help='path to train data')
+parser.add_argument('--test_dir', type=str, default='./data/medium',
+                    help='path to test data')
+parser.add_argument('--save', type=str, default='./results/medium', help='path to save results')
+parser.add_argument('--model', type=str, default='./weights/medium.pt', help='pretrained model path')
 
 args = parser.parse_args()
 
@@ -78,7 +83,6 @@ def main():
     logging.info('gpu device = %s' % args.gpu)
     logging.info("args = %s", args)
 
-
     model = Network(stage=args.stage)
 
     model.enhance.in_conv.apply(model.weights_init)
@@ -94,13 +98,9 @@ def main():
     logging.info("model size = %f", MB)
     print(MB)
 
+    TrainDataset = MemoryFriendlyLoader(img_dir=args.train_dir, task='train')
 
-    train_low_data_names = 'Your train dataset'
-    TrainDataset = MemoryFriendlyLoader(img_dir=train_low_data_names, task='train')
-
-
-    test_low_data_names = './data/medium'
-    TestDataset = MemoryFriendlyLoader(img_dir=test_low_data_names, task='test')
+    TestDataset = MemoryFriendlyLoader(img_dir=args.test_dir, task='test')
 
     train_queue = torch.utils.data.DataLoader(
         TrainDataset, batch_size=args.batch_size,
