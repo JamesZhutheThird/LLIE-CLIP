@@ -11,6 +11,7 @@
           <excludedPaths>
             <excludedPath path="/CV/LLIE-SCI/results" />
             <excludedPath path="/CV/LLIE-SCI/__pycache__" />
+            <excludedPath path="/CV/LLIE-SCI/Datasets" />
           </excludedPaths>
         </serverdata>
       </paths>
