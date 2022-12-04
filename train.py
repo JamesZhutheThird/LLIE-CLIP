@@ -17,6 +17,7 @@ from tqdm import tqdm
 from model import *
 from multi_read_data import MemoryFriendlyLoader
 
+
 def set_random_seed(args):
     seed = args.seed
     random.seed(seed)
@@ -25,12 +26,12 @@ def set_random_seed(args):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
+
 def save_images(tensor, path):
     image_numpy = tensor[0].cpu().float().numpy()
     image_numpy = (np.transpose(image_numpy, (1, 2, 0)))
     im = Image.fromarray(np.clip(image_numpy * 255.0, 0, 255.0).astype('uint8'))
     im.save(path, 'png')
-
 
 
 def main():
@@ -55,19 +56,19 @@ def main():
     parser.add_argument("--wandb_run_name", type=str, default=None, help="name of wandb run")
     
     args = parser.parse_args()
-
-    args.start_time=time.strftime("%Y%m%d-%H%M%S")
-    save_path=f"{args.output_dir}/{args.exp_name}/{args.start_time}"
-    model_path=f"{args.output_dir}/{args.exp_name}/{args.start_time}/models"
-    image_path=f"{args.output_dir}/{args.exp_name}/{args.start_time}/images"
-    log_path=f"{args.output_dir}/{args.exp_name}/{args.start_time}/logs"
-
+    
+    args.start_time = time.strftime("%Y%m%d-%H%M%S")
+    save_path = f"{args.output_dir}/{args.exp_name}/{args.start_time}"
+    model_path = f"{args.output_dir}/{args.exp_name}/{args.start_time}/models"
+    image_path = f"{args.output_dir}/{args.exp_name}/{args.start_time}/images"
+    log_path = f"{args.output_dir}/{args.exp_name}/{args.start_time}/logs"
+    
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
     os.makedirs(model_path, exist_ok=True)
     os.makedirs(image_path, exist_ok=True)
     os.makedirs(log_path, exist_ok=True)
-
+    
     set_random_seed(args)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -86,9 +87,9 @@ def main():
         args.wandb_run_name = args.exp_name
     
     logging.info("args = %s", args)
-
+    
     model = Network(stage=args.stage)
-
+    
     if args.model is not None:
         model.load_state_dict(torch.load(args.model))
         logging.info("load model from %s", args.model)
@@ -99,8 +100,8 @@ def main():
         model.calibrate.in_conv.apply(model.weights_init)
         model.calibrate.convs.apply(model.weights_init)
         model.calibrate.out_conv.apply(model.weights_init)
-
-    model.to(args.device)
+    
+    model.to(args.device)  # TODO: add DistributedDataParallel support
     
     if args.wandb:
         import wandb
@@ -109,33 +110,33 @@ def main():
         wandb.define_metric("epoch")
         wandb.define_metric("loss", step_metric='epoch')
         wandb.define_metric("lr", step_metric='epoch')
-
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=3e-4)
     MB = utils.count_parameters_in_MB(model)
     logging.info("model size = %f", MB)
     para = sum([np.prod(list(p.size())) for p in model.parameters()])
     logging.info("parameter number = %f", para)
     print(f"model size = {MB}, parameter number = {para}")
-
+    
     TrainDataset = MemoryFriendlyLoader(img_dir=args.train_dir, task='train')
-
+    
     TestDataset = MemoryFriendlyLoader(img_dir=args.test_dir, task='test')
-
+    
     train_queue = torch.utils.data.DataLoader(
         TrainDataset, batch_size=args.batch_size,
         pin_memory=True, num_workers=0, shuffle=True)
-
+    
     test_queue = torch.utils.data.DataLoader(
         TestDataset, batch_size=1,
         pin_memory=True, num_workers=0, shuffle=True)
-
+    
     total_step = 0
-
+    
     with tqdm(range(args.epochs)) as t1:
         for epoch in t1:
             t1.set_description(f"Epoch {epoch}")
             model.train()
-            losses=[]
+            losses = []
             with tqdm(train_queue) as t2:
                 for batch_idx, (input, _) in enumerate(t2):
                     t2.set_description(f"Train on Epoch {epoch}")
@@ -148,13 +149,13 @@ def main():
                     losses.append(loss.item())
                     t2.set_postfix(loss=loss.item())
                     if args.wandb:
-                        wandb.log({"loss": loss, "lr":optimizer.param_groups[0]['lr'],'epoch': epoch+batch_idx/len(train_queue)})
+                        wandb.log({"loss": loss, "lr": optimizer.param_groups[0]['lr'], 'epoch': epoch + batch_idx / len(train_queue)})
             logging.info('train-epoch %03d %f', epoch, np.average(losses))
             
-            if (epoch+1) % args.model_save_per_epoch == 0:
-                torch.save(model.state_dict(), f"{model_path}/model_{epoch+1}.pth")
-                logging.info("save model to %s", f"{model_path}/model_{epoch+1}.pth")
-
+            if (epoch + 1) % args.model_save_per_epoch == 0:
+                torch.save(model.state_dict(), f"{model_path}/model_{epoch + 1}.pth")
+                logging.info("save model to %s", f"{model_path}/model_{epoch + 1}.pth")
+            
             if args.eval and epoch % args.eval_per_epoch == 0 and total_step != 0:
                 model.eval()
                 with torch.no_grad():
@@ -163,8 +164,9 @@ def main():
                             input = Variable(input, volatile=True).cuda()
                             image_name = image_name[0].split('\\')[-1].split('.')[0]
                             illu_list, ref_list, input_list, atten = model(input)
-                            u_path=f"{image_path}/{image_name}_{epoch+1}.png"
+                            u_path = f"{image_path}/{image_name}_{epoch + 1}.png"
                             save_images(ref_list[0], u_path)
+
 
 if __name__ == '__main__':
     main()
