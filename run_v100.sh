@@ -1,13 +1,16 @@
 #!/bin/bash
-python train.py --batch_size 8 \
---gpu 1 \
+
+export CUDA_VISIBLE_DEVICES=1
+
+python train.py \
+--eval \
+--wandb \
+--batch_size 4 \
 --seed 42 \
---epochs 100 \
+--epochs 10 \
 --lr 3e-4 \
 --stage 3 \
---train_dir ./data/medium \
---test_dir ./data/medium \
---save ./results \
---model ./weights/medium.pt
-
-
+--train_dir ../Datasets/DarkFace_Train_2021/image \
+--test_dir ./data/all \
+--output_dir ./results \
+--exp_name baseline_test

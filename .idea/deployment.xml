@@ -10,7 +10,7 @@
           </mappings>
           <excludedPaths>
             <excludedPath path="/CV/LLIE-SCI/results" />
-            <excludedPath path="/CV/LLIE-SCI/data" />
+            <excludedPath path="/CV/LLIE-SCI/__pycache__" />
           </excludedPaths>
         </serverdata>
       </paths>
