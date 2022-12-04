@@ -10,7 +10,7 @@ python train.py \
 --epochs 10 \
 --lr 3e-4 \
 --stage 3 \
---train_dir ../Datasets/DarkFace_Train_2021/image \
+--train_dir ./Datasets/DarkFace_Train_2021/image \
 --test_dir ./data/all \
 --output_dir ./results \
 --exp_name baseline_test
