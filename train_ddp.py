@@ -65,6 +65,7 @@ def main():
     parser.add_argument("--wandb_project_name", type=str, default="LLIE-SCI", help="name of wandb project")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="name of wandb run")
     parser.add_argument("--start_time", type=str, default=None, help="start time of experiment")
+    parser.add_argument("--inception", action='store_true', help="use inception networks")
     
     args = parser.parse_args()
     
@@ -124,7 +125,7 @@ def main():
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()
     
-    model = Network(stage=args.stage)
+    model = Network(stage=args.stage,inception=args.inception)
     
     if args.model is not None:
         model.load_state_dict(torch.load(args.model, map_location=device))
@@ -250,4 +251,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        exit(0)
+        pass

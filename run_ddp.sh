@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=4 # per gpu
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 SEED=42
-N_GPU=4
+N_GPU=1
 BS=1
 BS_TOTAL=$((BS * N_GPU))
 EPOCH=10
@@ -19,10 +19,9 @@ TIME=$(date +%Y-%m-%d_%H:%M:%S)
 EXP_NAME=${INFO}_bs_${BS_TOTAL}_lr_${LR}_sche_${SCHE_STEP}_stage_${STAGE}_epoch_${EPOCH}
 THE_DIR=${OUTPUT_DIR}/${EXP_NAME}/${TIME}
 
-torchrun --nproc_per_node ${N_GPU} train_ddp.py \
+CUDA_VISIBLE_DEVICES=2 torchrun --nproc_per_node ${N_GPU} train_ddp.py \
 --global_rank 0 \
 --eval \
---wandb \
 --offline \
 --batch_size ${BS} \
 --seed ${SEED} \

@@ -4,3 +4,5 @@ results
 Datasets
 **/__pycache__
 .DS_Store
+.gitignore
+run_ddp.sh
