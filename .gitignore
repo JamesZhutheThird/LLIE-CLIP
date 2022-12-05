@@ -1,6 +1,5 @@
-.idea
+**/.idea
 data
 results
 Datasets
 **/__pycache__
-.DS_Store
