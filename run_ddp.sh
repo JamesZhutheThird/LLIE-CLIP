@@ -1,10 +1,10 @@
 #!/bin/bash
 
 export OMP_NUM_THREADS=4 # per gpu
-# export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 SEED=42
-N_GPU=6
+N_GPU=4
 BS=1
 BS_TOTAL=$((BS * N_GPU))
 EPOCH=10

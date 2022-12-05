@@ -1,25 +1,27 @@
+import argparse
+import glob
+import logging
 import os
 import pdb
 import random
 import sys
 import time
-import glob
+
 import numpy as np
 import torch
-import utils
-from PIL import Image
-import logging
-import argparse
-import torch.utils
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-from torch.autograd import Variable
-from tqdm import tqdm
+import torch.utils
+import utils
+import wandb
 from model import *
 from multi_read_data import MemoryFriendlyLoader
-from torch.utils.data import DataLoader, RandomSampler, DistributedSampler, SequentialSampler
+from PIL import Image
+from torch.autograd import Variable
 from torch.optim.lr_scheduler import StepLR
-import wandb
+from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
+                              SequentialSampler)
+from tqdm import tqdm
 
 
 def set_random_seed(args):
@@ -245,4 +247,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(0)
