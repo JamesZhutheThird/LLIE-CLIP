@@ -9,6 +9,7 @@ import torch.backends.cudnn as cudnn
 from PIL import Image
 from torch.autograd import Variable
 from model import Finetunemodel
+from metrics import *
 
 from multi_read_data import MemoryFriendlyLoader
 
@@ -68,8 +69,14 @@ def clahe(mri_img):
 def main():
     with torch.no_grad():
         for _, (input, image_name) in enumerate(test_queue):
-            # r = multiScaleRetinex(cv2.imread(image_name[0]), [15., 80., 200.])
-            r = clahe(cv2.imread(image_name[0]))
+            # r = multiScaleRetinex(cv2.imread(image_name[0]), [15., 80., 200.]) * 255
+            r = torch.tensor(clahe(cv2.imread(image_name[0])))
+            # calculate metrics
+            m1 = calc_ssim(r.permute(2, 0, 1) / 255, input[0])  # in metric calculation, axis 0 should be RGB channels
+            m2 = calc_psnr(r.permute(2, 0, 1) / 255, input[0])
+            m3 = calc_eme(r.permute(2, 0, 1) / 255)
+            m4 = calc_loe(r.permute(2, 0, 1) / 255, input[0])
+
             image_name = image_name[0].split('\\')[-1].split('.')[0]
 
             u_name = '%s.png' % (image_name)
