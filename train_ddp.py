@@ -59,6 +59,7 @@ def main():
     parser.add_argument('--model', type=str, default=None, help='pretrained model path')
     parser.add_argument("--exp_name", type=str, default='llie-sci', help="name of experiment")
     parser.add_argument("--wandb", action='store_true', help="enable wandb")
+    parser.add_argument("--offline", action='store_true', help="use wandb offline mode")
     parser.add_argument("--wandb_project_name", type=str, default="LLIE-SCI", help="name of wandb project")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="name of wandb run")
     parser.add_argument("--start_time", type=str, default=None, help="start time of experiment")
@@ -80,14 +81,14 @@ def main():
         os.makedirs(image_path, exist_ok=True)
         os.makedirs(log_path, exist_ok=True)
         
-        log_format = '%(asctime)s %(message)s'
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-                            format=log_format, datefmt='%m/%d %I:%M:%S %p')
-        fh = logging.FileHandler(f"{log_path}/logs.txt")
-        fh.setFormatter(logging.Formatter(log_format))
-        logging.getLogger().addHandler(fh)
-        
-        logging.info("train file name = %s", os.path.split(__file__))
+        # log_format = '%(asctime)s %(message)s'
+        # logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+        #                     format=log_format, datefmt='%m/%d %I:%M:%S %p')
+        # fh = logging.FileHandler(f"{log_path}/logs.txt")
+        # fh.setFormatter(logging.Formatter(log_format))
+        # logging.getLogger().addHandler(fh)
+        #
+        # logging.info("train file name = %s", os.path.split(__file__))
     
     if args.wandb_run_name is None:
         args.wandb_run_name = args.exp_name
@@ -146,6 +147,8 @@ def main():
         torch.distributed.barrier()
     
     if args.local_rank in [-1, 0] and args.wandb:
+        if args.offline:
+            os.environ["WANDB_MODE"] = "dryrun"
         wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, dir=log_path)
         wandb.config = {"args": args, }
         wandb.define_metric("epoch")
@@ -163,13 +166,14 @@ def main():
     args.total_batch_size = args.batch_size * max(1, args.n_gpu)
     
     if args.local_rank in [-1, 0]:
-        logging.info("args = %s", args)
+        print(args)
+        # logging.info("args = %s", args)
     
     total_step = 0
     
     with tqdm(range(args.epochs), disable=args.local_rank not in [-1, 0]) as t1:
         for epoch in t1:
-            t1.set_description(f"Epoch {epoch}")
+            t1.set_description(f"Epoch {epoch+1}")
             
             TrainDataset = MemoryFriendlyLoader(img_dir=args.train_dir, task='train')
             train_sampler = RandomSampler(TrainDataset) if args.local_rank == -1 else DistributedSampler(TrainDataset)
@@ -179,7 +183,7 @@ def main():
             losses = []
             with tqdm(train_queue, disable=args.local_rank not in [-1, 0]) as t2:
                 for batch_idx, (input, _) in enumerate(t2):
-                    t2.set_description(f"Train on Epoch {epoch}")
+                    t2.set_description(f"Train on Epoch {epoch+1}")
                     input = Variable(input, requires_grad=False).cuda()
                     optimizer.zero_grad()
                     loss = model.module._loss(input)
@@ -195,8 +199,8 @@ def main():
                         wandb.log({"loss": loss, "lr": scheduler.get_last_lr()[0], 'epoch': epoch + batch_idx / len(train_queue)})
                     total_step += 1
                     
-            if args.local_rank in [-1, 0]:
-                logging.info('train-epoch %03d %f', epoch, np.average(losses))
+            # if args.local_rank in [-1, 0]:
+            #     logging.info('train-epoch %03d %f', epoch+1, np.average(losses))
             
             if (epoch + 1) % args.schedular_step == 0:
                 scheduler.step()
@@ -205,10 +209,10 @@ def main():
                 torch.distributed.barrier()
             
             if args.local_rank in [-1, 0]:
-                
                 if (epoch + 1) % args.model_save_per_epoch == 0:
                     torch.save(model.state_dict(), f"{model_path}/model_{epoch + 1}.pth")
-                    logging.info("save model to %s", f"{model_path}/model_{epoch + 1}.pth")
+                    print(f"model saved to {model_path}/model_{epoch + 1}.pth")
+                    # logging.info("save model to %s", f"{model_path}/model_{epoch + 1}.pth")
                  
                 if args.eval and (epoch + 1) % args.eval_per_epoch == 0 and total_step != 0:
                     TestDataset = MemoryFriendlyLoader(img_dir=args.test_dir, task='test')
@@ -227,11 +231,14 @@ def main():
                         
                         with tqdm(test_queue) as t3:
                             for _, (input, image_name) in enumerate(t3):
-                                input = Variable(input, volatile=True).cuda()
+                                # input = Variable(input, volatile=True).cuda()
+                                
                                 image_name = image_name[0].split('\\')[-1].split('.')[0]
                                 illu_list, ref_list, input_list, atten = model(input)
                                 u_path = f"{output_path_for_eval}/{image_name}_{epoch + 1}.png"
                                 save_images(ref_list[0], u_path)
+
+                    torch.cuda.empty_cache()
             
             if args.local_rank == 0:
                 torch.distributed.barrier()
