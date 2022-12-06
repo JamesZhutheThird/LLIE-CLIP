@@ -5,6 +5,7 @@ import sys
 import time
 import glob
 import numpy as np
+import pandas as pd
 import torch
 import utils
 from PIL import Image
@@ -21,6 +22,7 @@ from torch.utils.data import DataLoader, RandomSampler, DistributedSampler, Sequ
 from torch.optim.lr_scheduler import StepLR
 import wandb
 
+from metrics import get_metrics
 
 def set_random_seed(args):
     seed = args.seed
@@ -196,6 +198,10 @@ def main():
                         wandb.log({"loss": loss, "lr": scheduler.get_last_lr()[0], 'epoch': epoch + batch_idx / len(train_queue)})
                     total_step += 1
                     
+                    # # Would you add it to debug mode please =v=
+                    # if batch_idx == 2:
+                    #     break
+                    
             if args.local_rank in [-1, 0]:
                 logging.info('train-epoch %03d %f', epoch, np.average(losses))
             
@@ -226,13 +232,33 @@ def main():
                         if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
                             model = torch.nn.DataParallel(model)
                         
+                        metrics_df = None
+                        
                         with tqdm(test_queue) as t3:
                             for _, (input, image_name) in enumerate(t3):
-                                input = Variable(input, volatile=True).cuda()
-                                image_name = image_name[0].split('\\')[-1].split('.')[0]
+                                # Argument volatile was removed and now has no effect. Statement `with torch.no_grad():` has been used instead.
+                                input = Variable(input).cuda()
+                                # Using '/' as seperator (Linux), origin repo runs on Windows
+                                image_name = image_name[0].split('/')[-1].split('.')[0]
                                 illu_list, ref_list, input_list, atten = model(input)
                                 u_path = f"{output_path_for_eval}/{image_name}_{epoch + 1}.png"
                                 save_images(ref_list[0], u_path)
+                                
+                                metrics_batch = get_metrics(image_name, ref_list[0], input)
+                                if metrics_df is not None:
+                                    metrics_df = pd.concat([metrics_df, metrics_batch],axis=0)
+                                else:
+                                    metrics_df = metrics_batch
+                    
+                        metrics_df.to_csv(f"{output_path_for_eval}/metrics_{epoch + 1}.csv")
+                        logging.info("evaluation-epoch %03d",epoch + 1)
+                        
+                        for metics_name in metrics_df.columns:
+                            logging.info("metric %s = %f", metics_name, metrics_df[metics_name].mean())
+                            if args.wandb:
+                                wandb.log({f"metric_{metics_name}": metrics_df[metics_name].mean()})
+                        
+                        # pdb.set_trace()
             
             if args.local_rank == 0:
                 torch.distributed.barrier()
@@ -243,4 +269,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         pass
-

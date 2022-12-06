@@ -2,9 +2,10 @@
 
 export OMP_NUM_THREADS=4 # per gpu
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
+# --train_dir ./Datasets/DarkFace_Train_2021/image \
 
 SEED=42
-N_GPU=6
+N_GPU=1
 BS=1
 BS_TOTAL=$((BS * N_GPU))
 EPOCH=100
@@ -18,14 +19,13 @@ CUDA_VISIBLE_DEVICES=2 torchrun --nproc_per_node ${N_GPU} train_ddp.py \
 --global_rank 0 \
 --eval \
 --wandb \
---offline \
 --batch_size ${BS} \
 --seed ${SEED} \
 --epochs ${EPOCH} \
 --lr ${LR} \
 --schedular_step ${SCHE_STEP} \
 --stage ${STAGE} \
---train_dir ./Datasets/DarkFace_Train_2021/image \
+--train_dir ../image \
 --test_dir ./data/all \
 --output_dir ./results \
 --model_save_per_epoch=10 \

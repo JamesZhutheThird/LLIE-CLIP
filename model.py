@@ -213,8 +213,8 @@ class Network(nn.Module):
         super(Network, self).__init__()
         self.stage = stage
         if inception:
-            self.enhance = EnhanceInceptionNetwork(layers=stage, channels=32)
-            self.calibrate = CalibrateInceptionNetwork(layers=stage, channels=32)
+            self.enhance = EnhanceInceptionNetwork(layers=1, channels=3)
+            self.calibrate = CalibrateInceptionNetwork(layers=3, channels=16)
         else:
             self.enhance = EnhanceNetwork(layers=1, channels=3)
             self.calibrate = CalibrateNetwork(layers=3, channels=16)
