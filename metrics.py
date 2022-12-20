@@ -157,7 +157,7 @@ def calc_loe(out_img, ori_img):
                     h_min, h_max = max(0, c - half_patch_size), min(out_img.shape[3] - 1, c + half_patch_size)
                     pixel_value = cur_channel[r, c]
                     ori_pixel_value = ori_channel[r, c]
-                    error_map = (pixel_value > cur_channel) ^ (ori_pixel_value > ori_channel)
+                    error_map = (pixel_value > cur_channel[w_min:w_max, h_min:h_max]) ^ (ori_pixel_value > ori_channel[w_min:w_max, h_min:h_max])
                     error += np.sum(error_map)
             result.append(torch.tensor(error / (sample_num * 3)))
         return result
