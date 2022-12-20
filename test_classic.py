@@ -53,6 +53,8 @@ def multiScaleRetinex(img, sigma_list):
 
     retinex = retinex / len(sigma_list)
 
+    retinex = (retinex - min(retinex)) / (max(retinex) - min(retinex))
+
     return retinex
 
 def clahe(mri_img):
