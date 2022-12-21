@@ -64,6 +64,7 @@ def calc_ssim(out_img, gt_img):
             mean_ssim = ssim(b_out_img, b_gt_img, channel_axis=0)
             result.append(torch.tensor(mean_ssim))
     else:
+        print(out_img.shape,gt_img.shape)
         mean_ssim = ssim(out_img, gt_img, channel_axis=0)
         return [torch.tensor(mean_ssim)]
 
