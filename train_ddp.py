@@ -149,7 +149,8 @@ def main():
         torch.distributed.barrier()
     
     if args.local_rank in [-1, 0] and args.wandb:
-        wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, dir=log_path)
+        # save wandb project in team account jameszhuthethirdteam
+        wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, dir=log_path, entity="jameszhuthethirdteam")
         wandb.config = {"args": args, }
         wandb.define_metric("epoch")
         wandb.define_metric("loss", step_metric='epoch')
