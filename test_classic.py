@@ -1,16 +1,17 @@
+import argparse
 import os
 import sys
+
 import cv2
 import numpy as np
 import torch
-import argparse
-import torch.utils
 import torch.backends.cudnn as cudnn
+import torch.utils
 from PIL import Image
 from torch.autograd import Variable
-from model import Finetunemodel
-from metrics import *
 
+from metrics import *
+from model import Finetunemodel
 from multi_read_data import MemoryFriendlyLoader
 
 parser = argparse.ArgumentParser("SCI")
@@ -31,6 +32,10 @@ test_queue = torch.utils.data.DataLoader(
     TestDataset, batch_size=1,
     pin_memory=True, num_workers=0)
 
+# PC有中文路径，以此解决中文路径读取问题
+def cv_imread(file_path):
+    cv_img = cv2.imdecode(np.fromfile(file_path,dtype=np.uint8),-1)
+    return cv_img
 
 def save_images(image_numpy, path):
     im = Image.fromarray(np.clip(image_numpy * 255.0, 0, 255.0).astype('uint8'))
@@ -71,8 +76,16 @@ def clahe(mri_img):
 def main():
     with torch.no_grad():
         for _, (input, image_name) in enumerate(test_queue):
-            # r = multiScaleRetinex(cv2.imread(image_name[0]), [15., 80., 200.]) * 255
-            r = torch.tensor(clahe(cv2.imread(image_name[0])))
+            # image_name (batch, list of str)里只有个文件名，改成路径，可能和Windows系统有关
+            image_file = os.path.join(args.data_path, image_name[0])
+            
+            if mode == 'retinex':
+                r = multiScaleRetinex(cv_imread(image_file), [15., 80., 200.]) * 255
+            elif mode == 'clahe':
+                r = torch.tensor(clahe(cv_imread(image_file)))
+            else:
+                raise NotImplementedError
+                
             # calculate metrics
             m1 = calc_ssim(r.permute(2, 0, 1) / 255, input[0])  # in metric calculation, axis 0 should be RGB channels
             m2 = calc_psnr(r.permute(2, 0, 1) / 255, input[0])
@@ -85,9 +98,10 @@ def main():
             print('processing {}'.format(u_name))
             u_path = save_path + '/' + u_name
             # save_images(r, u_path)
-            save_ori_images(r, u_path)
+            # 参数要求图像是ndarray
+            save_ori_images(r.numpy(), u_path)
 
-
+mode = 'retinex'
 
 if __name__ == '__main__':
     main()
