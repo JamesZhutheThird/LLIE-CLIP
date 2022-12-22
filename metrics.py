@@ -122,9 +122,16 @@ def calc_eme(out_img):
         eme_list = []
         for channel in range(out_img.shape[0]):
             cur_channel = out_img[channel]
-            block_row = 8
-            block_column = 8
-            blocks = view_as_blocks(cur_channel, block_shape=(block_row, block_column))
+            
+            # view_as_blocks不接受不能够整除的情况，预先padding到能够整除
+            pad_row = BLK - cur_channel.shape[0] % BLK if cur_channel.shape[0] % BLK != 0 else 0
+            pad_column = BLK - cur_channel.shape[1] % BLK if cur_channel.shape[1] % BLK != 0 else 0
+            cur_channel = np.pad(cur_channel,(
+                (0,pad_row),
+                (0,pad_column)
+                ),'minimum')
+                
+            blocks = view_as_blocks(cur_channel, block_shape=(BLK,BLK))
             for r in range(blocks.shape[0]):
                 for c in range(blocks.shape[1]):
                     eme_list.append(20 * np.log10(blocks[r, c].max() / (blocks[r, c].min() + 1e-6)))

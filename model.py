@@ -209,7 +209,7 @@ class CalibrateInceptionNetwork(nn.Module):
 
 class Network(nn.Module):
 
-    def __init__(self, stage=3,inception=False):
+    def __init__(self, stage=3, inception=False,fidelityloss=1,smoothloss=1):
         super(Network, self).__init__()
         self.stage = stage
         if inception:
@@ -218,7 +218,7 @@ class Network(nn.Module):
         else:
             self.enhance = EnhanceNetwork(layers=1, channels=3)
             self.calibrate = CalibrateNetwork(layers=3, channels=16)
-        self._criterion = LossFunction()
+        self._criterion = LossFunction(fidelityloss,smoothloss)
 
     def weights_init(self, m):
         if isinstance(m, nn.Conv2d):

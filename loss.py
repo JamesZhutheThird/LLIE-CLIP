@@ -1,15 +1,34 @@
 import torch
 import torch.nn as nn
 
+
 class LossFunction(nn.Module):
-    def __init__(self):
+    def __init__(self, fidelityloss=1, smoothloss=1):
         super(LossFunction, self).__init__()
         self.l2_loss = nn.MSELoss()
         self.smooth_loss = SmoothLoss()
+        self.fidelityloss = fidelityloss
+        self.smoothloss = smoothloss
+        
+        if self.fidelityloss + self.smooth_loss == 0:
+            raise Exception('Loss function should at least own one item!')
 
     def forward(self, input, illu):
-        Fidelity_Loss = self.l2_loss(illu, input)
-        Smooth_Loss = self.smooth_loss(input, illu)
+        if self.fidelityloss == 2 or self.smooth_loss == 2:
+            # standardize
+            _illu = (illu - torch.min(illu)) / (torch.max(illu) - torch.min(illu))
+            _input = (input - torch.min(input)) / (torch.max(input)- torch.min(input))
+        
+        if self.fidelityloss == 1:
+            Fidelity_Loss = self.l2_loss(illu, input)
+        elif self.fidelityloss == 2:
+            Fidelity_Loss = self.l2_loss(_illu,_input)
+            
+        if self.smooth_loss == 1:
+            Smooth_Loss = self.smooth_loss(input, illu)
+        elif self.smooth_loss == 2:
+            Smooth_Loss = self.smooth_loss(_input,_illu)
+        
         return 1.5*Fidelity_Loss + Smooth_Loss
 
 
