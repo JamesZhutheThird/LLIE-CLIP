@@ -1,28 +1,31 @@
+import argparse
+import glob
+import logging
 import os
 import pdb
 import random
 import sys
 import time
-import glob
+
 import numpy as np
 import pandas as pd
 import torch
-import utils
-from PIL import Image
-import logging
-import argparse
-import torch.utils
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
+import torch.utils
+import wandb
+from PIL import Image
 from torch.autograd import Variable
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
+                              SequentialSampler)
 from tqdm import tqdm
+
+import utils
+from metrics import get_metrics
 from model import *
 from multi_read_data import MemoryFriendlyLoader
-from torch.utils.data import DataLoader, RandomSampler, DistributedSampler, SequentialSampler
-from torch.optim.lr_scheduler import StepLR
-import wandb
 
-from metrics import get_metrics
 
 def set_random_seed(args):
     seed = args.seed
@@ -53,6 +56,8 @@ def main():
     parser.add_argument('--lr', type=float, default=0.0003, help='learning rate')
     parser.add_argument("--schedular_step", type=int, default=1, help="step size for schedular")
     parser.add_argument('--stage', type=int, default=3, help='epochs')
+    parser.add_argument('--fidelityloss', type=int, default=1, help='use fidelity loss: 0 for disable, 1 for use, 2 for normalized')
+    parser.add_argument('--smoothloss', type=int, default=1, help='use smooth loss: 0 for disable, 1 for use, 2 for normalized')
     parser.add_argument('--train_dir', type=str,
                         help='path to train data')
     parser.add_argument('--test_dir', type=str,
@@ -124,7 +129,7 @@ def main():
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()
     
-    model = Network(stage=args.stage,inception=args.inception)
+    model = Network(stage=args.stage,inception=args.inception,fidelityloss=args.fidelityloss,smoothloss=args.smoothloss)
     
     if args.model is not None:
         model.load_state_dict(torch.load(args.model, map_location=device))

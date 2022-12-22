@@ -46,8 +46,8 @@ def save_ori_images(image_numpy, path):
     im.save(path, 'png')
 
 def singleScaleRetinex(img, sigma):
-
-    retinex = np.log10(img) - np.log10(cv2.GaussianBlur(img, (0, 0), sigma))
+    eps = 1e-6
+    retinex = np.log10(img + eps) - np.log10(cv2.GaussianBlur(img, (0, 0), sigma)+eps)
 
     return retinex
 
@@ -58,7 +58,7 @@ def multiScaleRetinex(img, sigma_list):
 
     retinex = retinex / len(sigma_list)
 
-    retinex = (retinex - min(retinex)) / (max(retinex) - min(retinex))
+    retinex = (retinex - np.min(retinex)) / (np.max(retinex) - np.min(retinex))
 
     return retinex
 
@@ -75,31 +75,35 @@ def clahe(mri_img):
 
 def main():
     with torch.no_grad():
+        metrics_df = None
+        
         for _, (input, image_name) in enumerate(test_queue):
             # image_name (batch, list of str)里只有个文件名，改成路径，可能和Windows系统有关
             image_file = os.path.join(args.data_path, image_name[0])
             
             if mode == 'retinex':
-                r = multiScaleRetinex(cv_imread(image_file), [15., 80., 200.]) * 255
+                r = torch.Tensor(multiScaleRetinex(cv_imread(image_file), [15., 80., 200.,]) * 255)
             elif mode == 'clahe':
                 r = torch.tensor(clahe(cv_imread(image_file)))
             else:
                 raise NotImplementedError
-                
-            # calculate metrics
-            m1 = calc_ssim(r.permute(2, 0, 1) / 255, input[0])  # in metric calculation, axis 0 should be RGB channels
-            m2 = calc_psnr(r.permute(2, 0, 1) / 255, input[0])
-            m3 = calc_eme(r.permute(2, 0, 1) / 255)
-            m4 = calc_loe(r.permute(2, 0, 1) / 255, input[0])
+            
+            metrics_batch = get_metrics(image_name, r.permute(2, 0, 1) / 255, input[0])
+            if metrics_df is not None:
+                metrics_df = pd.concat([metrics_df, metrics_batch],axis=0)
+            else:
+                metrics_df = metrics_batch
 
             image_name = image_name[0].split('\\')[-1].split('.')[0]
 
             u_name = '%s.png' % (image_name)
             print('processing {}'.format(u_name))
-            u_path = save_path + '/' + u_name
+            u_path = os.path.join(save_path, u_name)
             # save_images(r, u_path)
             # 参数要求图像是ndarray
             save_ori_images(r.numpy(), u_path)
+            
+        metrics_df.to_csv(f"{save_path}/metrics_{mode}.csv")
 
 mode = 'retinex'
 
