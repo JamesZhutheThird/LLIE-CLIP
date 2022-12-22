@@ -209,8 +209,10 @@ def main():
             if (epoch + 1) % args.schedular_step == 0:
                 scheduler.step()
             
-            if args.local_rank not in [-1, 0]:
-                torch.distributed.barrier()
+            # TODO: we do not need these and there are bugs
+            # if args.local_rank not in [-1, 0]:
+            #     torch.distributed.barrier()
+            #     print(f"=========== {args.local_rank} ===========")
             
             if args.local_rank in [-1, 0]:
                 
@@ -260,9 +262,10 @@ def main():
                                 wandb.log({f"metric_{metics_name}": metrics_df[metics_name].mean()})
                         
                         # pdb.set_trace()
-            
-            if args.local_rank == 0:
-                torch.distributed.barrier()
+                   
+            # if args.local_rank == 0:
+            #     torch.distributed.barrier()
+            #     print(f"=========== {args.local_rank} ===========")
 
 
 if __name__ == '__main__':
