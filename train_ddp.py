@@ -62,6 +62,8 @@ def main():
                         help='path to train data')
     parser.add_argument('--test_dir', type=str,
                         help='path to test data')
+    parser.add_argument('--test_gt_dir',type=str,
+                        help='path to ground truth of test data')
     parser.add_argument('--output_dir', type=str, help='path to save results')
     parser.add_argument('--model', type=str, default=None, help='pretrained model path')
     parser.add_argument("--exp_name", type=str, default='llie-sci', help="name of experiment")
@@ -187,7 +189,7 @@ def main():
             model.train()
             losses = []
             with tqdm(train_queue, disable=args.local_rank not in [-1, 0]) as t2:
-                for batch_idx, (input, _) in enumerate(t2):
+                for batch_idx, (input, _, _) in enumerate(t2):
                     t2.set_description(f"Train on Epoch {epoch}")
                     input = Variable(input, requires_grad=False).cuda()
                     optimizer.zero_grad()
@@ -224,7 +226,7 @@ def main():
                     logging.info("save model to %s", f"{model_path}/model_{epoch + 1}.pth")
                  
                 if args.eval and (epoch + 1) % args.eval_per_epoch == 0 and total_step != 0:
-                    TestDataset = MemoryFriendlyLoader(img_dir=args.test_dir, task='test')
+                    TestDataset = MemoryFriendlyLoader(img_dir=args.test_dir, task='test', gt_dir = args.test_gt_dir)
                     eval_sampler = SequentialSampler(TestDataset)
                     test_queue = DataLoader(TestDataset, sampler=eval_sampler, batch_size=args.n_gpu)
 
@@ -241,7 +243,7 @@ def main():
                         metrics_df = None
                         
                         with tqdm(test_queue) as t3:
-                            for _, (input, image_name) in enumerate(t3):
+                            for _, (input, gt, image_name) in enumerate(t3):
                                 # Argument volatile was removed and now has no effect. Statement `with torch.no_grad():` has been used instead.
                                 input = Variable(input).cuda()
                                 # Using '/' as seperator (Linux), origin repo runs on Windows
@@ -250,7 +252,7 @@ def main():
                                 u_path = f"{output_path_for_eval}/{image_name}_{epoch + 1}.png"
                                 save_images(ref_list[0], u_path)
                                 
-                                metrics_batch = get_metrics(image_name, ref_list[0], input)
+                                metrics_batch = get_metrics(image_name, ref_list[0], input, gt)
                                 if metrics_df is not None:
                                     metrics_df = pd.concat([metrics_df, metrics_batch],axis=0)
                                 else:
