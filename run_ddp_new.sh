@@ -29,6 +29,9 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node ${N_GPU} train_ddp.py \
 --train_dir ../image \
 --test_dir ./data/all \
 --output_dir ./results \
+--test_gt_dir ../labels \
+--fidelityloss 1 \
+--smoothloss 1 \
 --model_save_per_epoch=10 \
 --eval_per_epoch=1 \
 --start_time=${TIME} \
