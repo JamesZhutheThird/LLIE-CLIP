@@ -6,15 +6,15 @@ class LossFunction(nn.Module):
     def __init__(self, fidelityloss=1, smoothloss=1):
         super(LossFunction, self).__init__()
         self.l2_loss = nn.MSELoss()
-        self.smooth_loss = SmoothLoss()
-        self.fidelityloss = fidelityloss
         self.smoothloss = smoothloss
+        self.fidelityloss = fidelityloss
+        self.smooth_loss = SmoothLoss()
         
-        if self.fidelityloss + self.smooth_loss == 0:
+        if self.fidelityloss + self.smoothloss == 0:
             raise Exception('Loss function should at least own one item!')
 
     def forward(self, input, illu):
-        if self.fidelityloss == 2 or self.smooth_loss == 2:
+        if self.fidelityloss == 2 or self.smoothloss == 2:
             # standardize
             _illu = (illu - torch.min(illu)) / (torch.max(illu) - torch.min(illu))
             _input = (input - torch.min(input)) / (torch.max(input)- torch.min(input))
@@ -24,9 +24,9 @@ class LossFunction(nn.Module):
         elif self.fidelityloss == 2:
             Fidelity_Loss = self.l2_loss(_illu,_input)
             
-        if self.smooth_loss == 1:
+        if self.smoothloss == 1:
             Smooth_Loss = self.smooth_loss(input, illu)
-        elif self.smooth_loss == 2:
+        elif self.smoothloss == 2:
             Smooth_Loss = self.smooth_loss(_input,_illu)
         
         return 1.5*Fidelity_Loss + Smooth_Loss
