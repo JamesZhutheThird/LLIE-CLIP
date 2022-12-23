@@ -63,6 +63,7 @@ def calc_ssim(out_img, gt_img):
             b_gt_img = gt_img[b]
             mean_ssim = ssim(b_out_img, b_gt_img, channel_axis=0)
             result.append(torch.tensor(mean_ssim))
+        return result
     else:
         # print(out_img.shape,gt_img.shape)
         mean_ssim = ssim(out_img, gt_img, channel_axis=0)
@@ -197,7 +198,7 @@ def get_metrics(img_name,out_img,ori_img,gt_img=None):
     If gt_img=None, calculate no-reference metrics only.
     """
     img_count = 1
-    if gt_img is int:
+    if gt_img is not None and len(gt_img.shape) < 3:
         gt_img = None
     metric_count = 4 if gt_img is not None else 2
     metrics = np.zeros((img_count,metric_count)).astype(float)

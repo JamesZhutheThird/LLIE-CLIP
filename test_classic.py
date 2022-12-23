@@ -24,7 +24,7 @@ def save_images(image_numpy, path):
     im.save(path, 'png')
 
 def save_ori_images(image_numpy, path):
-    im = Image.fromarray(np.clip(image_numpy, 0, 255.0).astype('uint8'))
+    im = Image.fromarray(cv2.cvtColor(np.clip(image_numpy, 0, 255.0).astype('uint8'),cv2.COLOR_BGR2RGB))
     im.save(path, 'png')
 
 def singleScaleRetinex(img, sigma):
@@ -71,7 +71,8 @@ def main():
             else:
                 raise NotImplementedError
             
-            metrics_batch = get_metrics(image_name, r.permute(2, 0, 1) / 255, input[0], gt[0])
+            # metrics_batch = get_metrics(image_name, r.permute(2, 0, 1) / 255, input[0], gt[0])
+            metrics_batch = get_metrics(image_name, (r.permute(2, 0, 1) / 255).unsqueeze(0), input, gt)
             if metrics_df is not None:
                 metrics_df = pd.concat([metrics_df, metrics_batch],axis=0)
             else:
@@ -90,7 +91,7 @@ def main():
 
 parser = argparse.ArgumentParser("SCI")
 parser.add_argument('--data',type=str,default='lol',help='name of the dataset')
-parser.add_argument('--mode',type=str,default='clahe',help='method used')
+parser.add_argument('--mode',type=str,default='retinex',help='method used')
 # parser.add_argument('--data_path', type=str, default='./data/lol/low',
 #                     help='location of the data corpus')
 # parser.add_argument('--gt_path', type=str, default='./data/lol/high')

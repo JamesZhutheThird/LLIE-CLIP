@@ -54,7 +54,7 @@ class MemoryFriendlyLoader(torch.utils.data.Dataset):
             _high = Image.open(self.test_high_data_names[index]).convert('RGB')
             high = self.gt_transform(_high)
         else:
-            high = -1
+            high = torch.Tensor([])
 
         h = low.shape[0]
         w = low.shape[1]
