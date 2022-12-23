@@ -64,7 +64,7 @@ def calc_ssim(out_img, gt_img):
             mean_ssim = ssim(b_out_img, b_gt_img, channel_axis=0)
             result.append(torch.tensor(mean_ssim))
     else:
-        print(out_img.shape,gt_img.shape)
+        # print(out_img.shape,gt_img.shape)
         mean_ssim = ssim(out_img, gt_img, channel_axis=0)
         return [torch.tensor(mean_ssim)]
 
@@ -134,7 +134,10 @@ def calc_eme(out_img):
             blocks = view_as_blocks(cur_channel, block_shape=(BLK,BLK))
             for r in range(blocks.shape[0]):
                 for c in range(blocks.shape[1]):
-                    eme_list.append(20 * np.log10(blocks[r, c].max() / (blocks[r, c].min() + 1e-6)))
+                    if blocks[r,c].max() == 0:
+                        eme_value = 0
+                    else:
+                        eme_list.append(20 * np.log10(blocks[r, c].max() / (blocks[r, c].min() + 1e-6)))
         return [torch.tensor(np.mean(eme_list))]
 
 
@@ -194,6 +197,8 @@ def get_metrics(img_name,out_img,ori_img,gt_img=None):
     If gt_img=None, calculate no-reference metrics only.
     """
     img_count = 1
+    if gt_img is int:
+        gt_img = None
     metric_count = 4 if gt_img is not None else 2
     metrics = np.zeros((img_count,metric_count)).astype(float)
     

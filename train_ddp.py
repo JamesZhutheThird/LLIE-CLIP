@@ -71,7 +71,7 @@ def main():
     parser.add_argument("--wandb_project_name", type=str, default="LLIE-SCI", help="name of wandb project")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="name of wandb run")
     parser.add_argument("--start_time", type=str, default=None, help="start time of experiment")
-    parser.add_argument("--inception", action='store_true', help="use inception networks")
+    parser.add_argument("--inception", type=int, default=0, help="use inception networks")
     
     args = parser.parse_args()
     
