@@ -68,6 +68,7 @@ def main():
     parser.add_argument('--model', type=str, default=None, help='pretrained model path')
     parser.add_argument("--exp_name", type=str, default='llie-sci', help="name of experiment")
     parser.add_argument("--wandb", action='store_true', help="enable wandb")
+    parser.add_argument("--dryrun", action='store_true', help="enable offline mode for wandb")
     parser.add_argument("--wandb_project_name", type=str, default="LLIE-SCI", help="name of wandb project")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="name of wandb run")
     parser.add_argument("--start_time", type=str, default=None, help="start time of experiment")
@@ -146,7 +147,7 @@ def main():
         model.calibrate.out_conv.apply(model.weights_init)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=3e-4)
-    scheduler = StepLR(optimizer, step_size=1, gamma=0.99)
+    scheduler = StepLR(optimizer, step_size=1, gamma=0.9)
     MB = utils.count_parameters_in_MB(model)
     para = sum([np.prod(list(p.size())) for p in model.parameters()])
     if args.local_rank in [-1, 0]:
@@ -156,6 +157,8 @@ def main():
         torch.distributed.barrier()
     
     if args.local_rank in [-1, 0] and args.wandb:
+        if args.dryrun:
+            os.environ["WANDB_MODE"] = "dryrun"
         # save wandb project in team account jameszhuthethirdteam
         wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, dir=log_path, entity="jameszhuthethirdteam")
         wandb.config = {"args": args, }
@@ -216,8 +219,10 @@ def main():
             if (epoch + 1) % args.schedular_step == 0:
                 scheduler.step()
             
-            if args.local_rank not in [-1, 0]:
-                torch.distributed.barrier()
+            # TODO: we do not need these and there are bugs
+            # if args.local_rank not in [-1, 0]:
+            #     torch.distributed.barrier()
+            #     print(f"=========== {args.local_rank} ===========")
             
             if args.local_rank in [-1, 0]:
                 
@@ -267,9 +272,10 @@ def main():
                                 wandb.log({f"metric_{metics_name}": metrics_df[metics_name].mean()})
                         
                         # pdb.set_trace()
-            
-            if args.local_rank == 0:
-                torch.distributed.barrier()
+                   
+            # if args.local_rank == 0:
+            #     torch.distributed.barrier()
+            #     print(f"=========== {args.local_rank} ===========")
 
 
 if __name__ == '__main__':
