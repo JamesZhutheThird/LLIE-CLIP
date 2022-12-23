@@ -19,7 +19,7 @@ class MemoryFriendlyLoader(torch.utils.data.Dataset):
         self.train_low_data_names = []
         self.test_high_data_names = []
         
-        self.has_gt = (self.high_img_dir is None)
+        self.has_gt = (self.high_img_dir is not None)
             
         for root, dirs, names in os.walk(self.low_img_dir):
             for name in names:
@@ -54,7 +54,7 @@ class MemoryFriendlyLoader(torch.utils.data.Dataset):
             _high = Image.open(self.test_high_data_names[index]).convert('RGB')
             high = self.gt_transform(_high)
         else:
-            gt = None
+            high = -1
 
         h = low.shape[0]
         w = low.shape[1]
