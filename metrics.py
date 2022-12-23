@@ -17,8 +17,8 @@ def calc_psnr(out_img, gt_img):
     Calculate PSNR of the output image and the label image. Support batched or single data.
     Return a list whose elements are tensors, i.e., the calculated PSNR.
     """
-    out_img = out_img.cpu()
-    gt_img = gt_img.cpu()
+    out_img = out_img.cpu().numpy()
+    gt_img = gt_img.cpu().numpy()
     assert out_img.shape == gt_img.shape
     if len(out_img.shape) > 3:
         batched = True
@@ -49,8 +49,8 @@ def calc_ssim(out_img, gt_img):
     Calculate SSIM. Support batched or single data.
     Return a list whose elements are tensors, i.e., the calculated SSIM.
     """
-    out_img = out_img.cpu().numpy()
-    gt_img = gt_img.cpu().numpy()
+    out_img = out_img.cpu()
+    gt_img = gt_img.cpu()
     assert out_img.shape == gt_img.shape
     if len(out_img.shape) > 3:
         batched = True

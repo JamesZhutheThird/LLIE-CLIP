@@ -95,7 +95,7 @@ torchrun --nproc_per_node ${N_GPU} train_ddp.py \
 --lr ${LR} \
 --schedular_step ${SCHE_STEP} \
 --stage ${STAGE} \
---train_dir ./Datasets/combined \
+--train_dir ./Datasets/combined_test/low \
 --output_dir ./results \
 --test_dir ./Datasets/combined_test/low \
 --test_gt_dir ./Datasets/combined_test/normal \
@@ -105,7 +105,3 @@ torchrun --nproc_per_node ${N_GPU} train_ddp.py \
 --eval_per_epoch=1 \
 --start_time=${TIME} \
 --exp_name=${INFO}_bs_${BS_TOTAL}_lr_${LR}_sche_${SCHE_STEP}_stage_${STAGE}_epoch_${EPOCH}_fl_${FL}_sl_${SL}_icp_${ICP}
-
-
-# find ./GladNet-Dataset/Normal -type f -exec cp {} ./combined_test/normal \;
-# how to re
