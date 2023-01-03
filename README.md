@@ -2,6 +2,8 @@
 
 A group project of CS7303 (2022-2023 autumn)
 
+The original model are based on [SCI](https://github.com/vis-opt-group/SCI)
+
 
 ### requirements
 
